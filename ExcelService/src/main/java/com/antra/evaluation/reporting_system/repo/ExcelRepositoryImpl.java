@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 @Repository
 public class ExcelRepositoryImpl implements ExcelRepository {
