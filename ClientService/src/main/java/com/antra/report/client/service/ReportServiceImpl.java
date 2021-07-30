@@ -1,6 +1,7 @@
 package com.antra.report.client.service;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.antra.report.client.entity.ExcelReportEntity;
 import com.antra.report.client.entity.PDFReportEntity;
 import com.antra.report.client.entity.ReportRequestEntity;
@@ -27,10 +28,7 @@ import org.springframework.web.client.RestTemplate;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -289,6 +287,23 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public void deleteRequest(String reqId){
+        //find the request entity
+        ReportRequestEntity entity=reportRequestRepo.findById(reqId).orElseThrow();
         reportRequestRepo.deleteById(reqId);
+        //delete excel file
+        String fileLocation = entity.getPdfReport().getFileLocation(); // this location is s3 "bucket/key"
+        String fileId = entity.getExcelReport().getFileId();
+        Map<String,String> excelToDelete = new HashMap<>();
+        excelToDelete.put("id",fileId);
+        RestTemplate rs = new RestTemplate();
+        try {
+            rs.delete("http://localhost:8888/excel/{id}", excelToDelete);
+        } catch(Exception e){
+            log.error("Delete error: ", e);
+        }
+        //delete pdf file
+        String bucket = fileLocation.split("/")[0];
+        String key = fileLocation.split("/")[1];
+        s3Client.deleteObject(new DeleteObjectRequest(bucket,key));
     }
 }
